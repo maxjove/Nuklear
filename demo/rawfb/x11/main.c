@@ -46,8 +46,8 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_INCLUDE_SOFTWARE_FONT
 
-#include "../../nuklear.h"
-#include "nuklear_rawfb.h"
+#include "../../../nuklear.h"
+#include "../nuklear_rawfb.h"
 #include "nuklear_xlib.h"
 
 #define DTIME           20
@@ -114,7 +114,8 @@ sleep_for(long t)
 /*#define INCLUDE_STYLE */
 /*#define INCLUDE_CALCULATOR */
 /*#define INCLUDE_CANVAS */
-/*#define INCLUDE_OVERVIEW */
+#define INCLUDE_OVERVIEW
+/*#define INCLUDE_CONFIGURATOR */
 /*#define INCLUDE_NODE_EDITOR */
 
 #ifdef INCLUDE_ALL
@@ -122,23 +123,27 @@ sleep_for(long t)
   #define INCLUDE_CALCULATOR
   #define INCLUDE_CANVAS
   #define INCLUDE_OVERVIEW
+  #define INCLUDE_CONFIGURATOR
   #define INCLUDE_NODE_EDITOR
 #endif
 
 #ifdef INCLUDE_STYLE
-  #include "../../demo/common/style.c"
+  #include "../../common/style.c"
 #endif
 #ifdef INCLUDE_CALCULATOR
-  #include "../../demo/common/calculator.c"
+  #include "../../common/calculator.c"
 #endif
 #ifdef INCLUDE_CANVAS
-  #include "../../demo/common/canvas.c"
+  #include "../../common/canvas.c"
 #endif
 #ifdef INCLUDE_OVERVIEW
-  #include "../../demo/common/overview.c"
+  #include "../../common/overview.c"
+#endif
+#ifdef INCLUDE_CONFIGURATOR
+  #include "../../common/style_configurator.c"
 #endif
 #ifdef INCLUDE_NODE_EDITOR
-  #include "../../demo/common/node_editor.c"
+  #include "../../common/node_editor.c"
 #endif
 
 /* ===============================================================
@@ -156,8 +161,13 @@ main(void)
     XWindow xw;
     struct rawfb_context *rawfb;
     void *fb = NULL;
-    rawfb_pl pl;
+    struct rawfb_pl pl;
     unsigned char tex_scratch[512 * 512];
+
+    #ifdef INCLUDE_CONFIGURATOR
+    static struct nk_color color_table[NK_COLOR_COUNT];
+    memcpy(color_table, nk_default_color_style, sizeof(color_table));
+    #endif
 
     /* X11 */
     memset(&xw, 0, sizeof xw);
@@ -192,19 +202,6 @@ main(void)
     /* GUI */
     rawfb = nk_rawfb_init(fb, tex_scratch, xw.width, xw.height, xw.width * 4, pl);
     if (!rawfb) running = 0;
-
-    #ifdef INCLUDE_STYLE
-    /* ease regression testing during Nuklear release process; not needed for anything else */
-    #ifdef STYLE_WHITE
-    set_style(&rawfb->ctx, THEME_WHITE);
-    #elif defined(STYLE_RED)
-    set_style(&rawfb->ctx, THEME_RED);
-    #elif defined(STYLE_BLUE)
-    set_style(&rawfb->ctx, THEME_BLUE);
-    #elif defined(STYLE_DARK)
-    set_style(&rawfb->ctx, THEME_DARK);
-    #endif
-    #endif
 
     while (running) {
         /* Input */
@@ -246,6 +243,9 @@ main(void)
         #endif
         #ifdef INCLUDE_OVERVIEW
           overview(&rawfb->ctx);
+        #endif
+        #ifdef INCLUDE_CONFIGURATOR
+          style_configurator(&rawfb->ctx, color_table);
         #endif
         #ifdef INCLUDE_NODE_EDITOR
           node_editor(&rawfb->ctx);
